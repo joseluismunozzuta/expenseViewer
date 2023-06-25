@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <script type="module" src="index.js"></script>
+    </head>
+    <body>
+        <h1>Jose Munoz - Expenses</h1>
+
+        <label for="month-select">Select a Month:</label>
+        <select id="month-select">
+            <option value>-- Select --</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+        </select>
+
+        <button id="fetch-button">Fetch Data</button>
+
+        <div>
+            <h1 id="result"></h1>
+            <div style="width: 400px;"><canvas id="chart"></canvas></div>
+        </div>
+
+    </body>
+
+    <script src="index.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+    <script type="module">
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAcBLKEwCVpuBbO9264Jx-XF7MUdM-jrIA",
+            authDomain: "expenseregisterdb.firebaseapp.com",
+            databaseURL: "https://expenseregisterdb-default-rtdb.firebaseio.com",
+            projectId: "expenseregisterdb",
+            storageBucket: "expenseregisterdb.appspot.com",
+            messagingSenderId: "20222757396",
+            appId: "1:20222757396:web:600226a0b48ae7f3a5b501"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const monthSelect = document.getElementById('month-select');
+        const fetchButton = document.getElementById('fetch-button');
+        const resultDiv = document.getElementById('result');
+        let expenseChart;
+
+        function getRandomColor() {
+    
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+        
+            const color = `rgb(${r}, ${g}, ${b})`;
+        
+            return color;
+        }
+
+
+        let labelsArr = [];
+        let valuesArr = [];
+
+        fetchButton.addEventListener('click', async () => {
+
+            resultDiv.textContent = '';
+
+            labelsArr.length = 0;
+            valuesArr.length = 0;
+
+            const selectedMonth = parseInt(monthSelect.value);
+        
+            if (isNaN(selectedMonth)) {
+                resultDiv.textContent = 'Please select a valid month.';
+                return;
+            }
+        
+            const startDate = new Date(2023, selectedMonth, 1); // Year, Month (0-indexed), Day
+            const endDate = new Date(2023, selectedMonth + 1, 0); // Year, Month (0-indexed), Last day of the month
+        
+            const startTimestamp = Timestamp.fromDate(startDate);
+            const endTimestamp = Timestamp.fromDate(endDate);
+        
+            const q = query(collection(db, "/expenses"), where("timestamp", ">=", startTimestamp), where("timestamp", "<=", endTimestamp));
+
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                resultDiv.textContent = 'No documents found for the selected month.';
+                return;
+            }
+
+            let total = 0;
+            let expenseMap = new Map();
+            querySnapshot.forEach((doc) => {
+                
+                let category = doc.data().category;
+                let value = doc.data().amount;
+
+                if(!expenseMap.has(category)){
+                    expenseMap.set(category, value);
+                }else{
+                    let currValue = expenseMap.get(category);
+                    expenseMap.set(category, currValue+Number.parseFloat(value));
+                }
+                
+                total += Number.parseFloat(value);
+            });
+
+            expenseMap.forEach(function(value, key){
+                
+                labelsArr.push(key);
+                valuesArr.push(value);
+            })
+            
+            if(expenseChart){
+                expenseChart.destroy();
+            }
+
+            expenseChart = new Chart(
+                document.getElementById('chart'),
+                {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsArr,
+                        datasets: [{
+                            label: 'Soles',
+                            data: valuesArr,
+                            backgroundColor: valuesArr.map(() => getRandomColor()),
+                            hoverOffset: 2,
+                            borderWidth: 1
+                        }]
+                    }
+                    
+                }
+            );
+
+        });
+
+    </script>
+
+</html>
