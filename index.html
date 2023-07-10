@@ -40,6 +40,8 @@
             <div class="flex justify-center flex-col items-center">
                 <h1 class="text-center font-bold my-4" id="result"></h1>
                 <div class="w-full"><canvas id="chart"></canvas></div>
+                <h1 class="text-center text-black font-bold my-4" id="totalAmount"></h1>
+
             </div>
         </div>
     </body>
@@ -71,6 +73,7 @@
         const monthSelect = document.getElementById('month-select');
         const fetchButton = document.getElementById('fetch-button');
         const resultDiv = document.getElementById('result');
+        const totalAmount = document.getElementById("totalAmount");
         let expenseChart;
 
         function getRandomColor() {
@@ -136,6 +139,7 @@
                 }
                 
                 total += Number.parseFloat(value);
+    
             });
 
             expenseMap.forEach(function(value, key){
@@ -143,6 +147,8 @@
                 labelsArr.push(key);
                 valuesArr.push(value);
             })
+
+            total = total.toFixed(2);
 
             expenseChart = new Chart(
                 document.getElementById('chart'),
@@ -161,6 +167,8 @@
                     
                 }
             );
+
+            totalAmount.textContent = `Month total: S/.${total}`;
 
         });
 
